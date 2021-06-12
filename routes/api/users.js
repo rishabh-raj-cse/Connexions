@@ -10,6 +10,10 @@ const keys = require("../../config/keys");
 const passport = require("passport");
 
 const router = express.Router();
+
+//Load Input validation
+const validateRegisterInput = require("../../validation/register");
+
 //Load User Model
 
 const User = require("../../models/User");
@@ -29,6 +33,11 @@ router.get("/test", (req, res) =>
 // @access   Public
 
 router.post("/register", (req, res) => {
+  const { errors, isValid } = validateRegisterInput(req.body);
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   User.findOne({
     email: req.body.email,
   }).then((user) => {
@@ -96,7 +105,7 @@ router.post("/login", (req, res) => {
           (err, token) => {
             res.json({
               success: true,
-              token: "bearer" + token,
+              token: "Bearer" + token,
             });
           }
         );
@@ -106,5 +115,18 @@ router.post("/login", (req, res) => {
     });
   });
 });
+
+router.get(
+  "/current",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    console.log(req.user);
+    res.json({
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+    });
+  }
+);
 
 module.exports = router;
